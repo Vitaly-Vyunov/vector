@@ -1,73 +1,77 @@
-	ORG	0AE00H
-ZAPL:	EQU	0D380H	;DISP !
-ZAPL2:	EQU	0C000H
-BDSLDS:	EQU	0AC21H
-CURDSK:	EQU	0A342H
-DRIVSP:	EQU	0C000H
-BDPRNT:	EQU	0A190H
-BDDAT:	EQU	0ADB1H
-BDDAT2:	EQU	0ADB9H
-BDDAT3:	EQU	0ADD9H
-INITCN:	EQU	0CA00H
-PRINT:	EQU	0CA18H
-KEYS:	EQU	0CA12H
-KEY:	EQU	0CA03H
-PRINTC:	EQU	0CA09H
-HEXOUT:	EQU	0CA15H
-INBYT:	EQU	0CA06H
-OUTBYT:	EQU	0CA0CH
-LST:	EQU	0CA0FH
-RDMA:	EQU	0D900H
-VDMA:	EQU	0DE80H
-VIRT:	EQU	0DE00H
-BATPAR:	EQU	0DD00H
-SWAP:	EQU	0DD80H
-DDMA:	EQU	0FF00H
-P10:	EQU	20H
-CPM:	EQU	0A011H
-CPM0:	EQU	0A006H
+;(перед компилированием преобразовать в CP866)
+	.ORG	0AE00H
+ZAPL:	.EQU	0D380H	;DISP !
+ZAPL2:	.EQU	0C000H
+BDSLDS:	.EQU	0AC2DH	;== .dw AAC21 bdos.asm
+CURDSK:	.EQU	0A34EH	;== .dw DA342 bdos.asm
+DRIVSP:	.EQU	0C000H
+BDPRNT:	.EQU	0A18AH	;== .dw AA190 bdos.asm
+BDDAT:	.EQU	0ADBDH	;== .dw DADB1 bdos.asm
+BDDAT2:	.EQU	0ADC5H	;== .dw DADB9 bdos.asm
+BDDAT3:	.EQU	0ADE5H	;== .dw DADD9 bdos.asm
+INITCN:	.EQU	0CA00H
+PRINT:	.EQU	0CA18H
+KEYS:	.EQU	0CA12H
+KEY:	.EQU	0CA03H
+PRINTC:	.EQU	0CA09H
+HEXOUT:	.EQU	0CA15H
+INBYT:	.EQU	0CA06H
+OUTBYT:	.EQU	0CA0CH
+LST:	.EQU	0CA0FH
+RDMA:	.EQU	0D900H	; (L должно быть =0)
+VDMA:	.EQU	0DE80H
+VIRT:	.EQU	0DE00H
+BATPAR:	.EQU	0DD00H
+SWAP:	.EQU	0DD80H
+DDMA:	.EQU	0FF00H
+P10:	.EQU	20H
+CPM:	.EQU	0A011H
+CPM0:	.EQU	0A006H
 CBIOS:
-	JMP	COLD
-	JMP	WBOOT
-	JMP	KEYS
-	JMP	KEY
-	JMP	PRINTC
-	JMP	LST
-	JMP	PUTCH
-	JMP	READER
-	JMP	HOME
-	JMP	SELDSK
-	JMP	SETTRC
-	JMP	SETSEC
-	JMP	SETDMA
-	JMP	READ
-	JMP	WRITE
-	JMP	LISTST
-	JMP	SECTRN
-	DW	DISKI
-	JMP	VCPM
-	JMP	BDSEAR
-	JMP	BDREST
-	JMP	NBDOS
-	DW	HDDAT
-TYPEWR:	DB	0
-FTRACK:	DB	0
-WOPER:	DB	0
+	JMP	COLD	; +0
+	JMP	WBOOT	; +3
+	JMP	KEYS	; +6
+	JMP	KEY	; +9
+	JMP	PRINTC	; +C
+	JMP	LST	; +F
+	JMP	PUTCH	; +12
+	JMP	READER	; +15
+	JMP	HOME	; +18
+	JMP	SELDSK	; +1B
+	JMP	SETTRC	; +1E
+	JMP	SETSEC	; +21
+	JMP	SETDMA	; +24
+	JMP	READ	; +27
+	JMP	WRITE	; +2A
+	JMP	LISTST	; +2D
+	JMP	SECTRN	; +30
+	.DW	DISKI	; +33
+	JMP	VCPM	; +35
+	JMP	BDSEAR	; +38
+	JMP	BDREST	; +3B
+	JMP	NBDOS	; +3E
+	.DW	HDDAT	; +41
+TYPEWR:	.DB	0
+FTRACK:	.DB	0
+WOPER:	.DB	0
 BDSEAR:	SHLD	DMA
 	CALL	READ10
 	RET
+;
 BDREST:	LDA	CURDSK
 	MOV	C,A
 	LXI	H,1
 	CALL	BDRS10
 	CALL	0AD56H
 	JMP	0AC21H
+;
 BDRS10:	INR	C
 	DCR	C
 	RZ
 	DAD	H
 	ADC	A
 	JMP	BDRS10+1
+;
 COLD:	LDA	3EH
 	ANA	A
 	JZ	0FB03H
@@ -81,7 +85,7 @@ COLD:	LDA	3EH
 	MVI	A,0C9H
 	STA	38H
 	MVI	A,1
-	STA	3FH
+	STA	3FH	; режим обработки ошибок
 	LHLD	DISKI
 	LXI	D,ZAGA
 	PUSH	H
@@ -117,7 +121,7 @@ COLD02:	PUSH	B
 	LXI	H,40H
 	SHLD	6
 	SHLD	9
-	MVI	A,0C3H
+	MVI	A,0C3H	; = JMP
 	STA	5
 	STA	8
 	LXI	D,M40
@@ -125,6 +129,7 @@ COLD02:	PUSH	B
 	XCHG
 	CALL	COPY10
 	RET
+;
 BCOPY:	MOV	A,M
 	STAX	D
 	INX	H
@@ -134,23 +139,27 @@ BCOPY:	MOV	A,M
 	ORA	C
 	JNZ	BCOPY
 	RET
-M40:	DI
+;
+M40:	DI		; (копируется в 0040h)
 	LDA	15
 	OUT	10H
 	JMP	CBIOS+35H
-	LDA	3CH
-	OUT	10H
-	MOV	A,C
-	EI
-	RET
+;
+	LDA	3CH	; 0049h
+	OUT	10H	; 
+	MOV	A,C	; 
+	EI		; 
+	RET		; 
+
 COLD10:	STA	3EH
 	MVI	A,0C3H
 	STA	M38
 	XRA	A
-	STA	3FH
+	STA	3FH	; режим обработки ошибок
 	CALL	INITCN
 	CALL	BDSLDS
 	RET
+;
 VCPM:	LXI	H,0
 	DAD	SP
 	SHLD	VCPM10+1
@@ -165,8 +174,9 @@ VCPM:	LXI	H,0
 	LDA	M38
 	STA	38H
 VCPM10:	LXI	SP,0
-	JMP	49H
-M38:	DB	0
+	JMP	49H	; >>> !!
+;
+M38:	.DB	0
 WBOOT:	DI
 	LXI	H,0FB00H
 	SHLD	6
@@ -175,6 +185,8 @@ WBOOT:	DI
 	MVI	A,-1
 	STA	ODISK
 	LDA	4
+;	CMP	3	; макс. номер диска !!!
+;	JNC
 	PUSH	PSW
 	CALL	COM
 	POP	PSW
@@ -183,7 +195,8 @@ WBOOT:	DI
 	EI
 	LHLD	PUSK
 	RET
-PUSK:	DW	0
+;
+PUSK:	.DW	0
 COM:	LDA	FLBAT
 	ANA	A
 	JNZ	FRCOM
@@ -197,10 +210,12 @@ COM:	LDA	FLBAT
 	SHLD	PUSK
 	XCHG
 	JMP	COM20
+;
 FRCOM:	LXI	H,FILE
 	CALL	COM00
 	JZ	COMER
 	JMP	COM02
+;
 COM00:	LXI	D,5CH
 	MVI	B,12
 	CALL	COPY10
@@ -222,6 +237,7 @@ COM00:	LXI	D,5CH
 	CALL	CPM
 	INR	A
 	RET
+;
 COM02: 	LXI	D,80H
 	MVI	C,26
 	CALL	CPM
@@ -248,45 +264,56 @@ COM20:	PUSH	D
 	MOV	E,A
 	MVI	C,32
 	JMP	CPM
+;
 COMER:	LXI	H,STRCE
 	CALL	PRINT
 	DI
 	HLT
-STRCE:	DB 10,'Отсутствует файл C:COMMAND.SYS !',7,0
-FILE:	DB 0,'COMMAND SYS'
-OLDUSR:	DB	0
-ACOMBF:	DS	12
+STRCE:;	.DB 10,"Отсутствует файл C:COMMAND.SYS !",7,0
+	.DB 10,"я╘╙╒╘╙╘╫╒┼╘ ╞┴╩╠ C:COMMAND.SY"
+	.DB "S !",7,0
+FILE:	.DB 0,"COMMAND SYS"
+OLDUSR:	.DB	0
+ACOMBF:	.DS	12	; <=
+;
 PUTCH:	MOV	A,C
 	JMP	OUTBYT
+;
 READER:	MOV	A,C
 	JMP	INBYT
+;
 HOME:	MVI	C,0
 SETTRC:	LXI	H,TRACK
 	MOV	M,C
 	RET
+;
 SETSEC:	LXI	H,SECT
 	MOV	M,C
 	RET
+;
 SETDMA:	MOV	H,B
 	MOV	L,C
 	SHLD	DMA
 	RET
+;
 LISTST:	IN	5
 	ANI	1
 	RET
+;
 SECTRN:	MOV	H,B
 	INR	C
 	MOV	L,C
 	RET
+;
 SELDSK:	LXI	H,0
 	MOV	A,C
 	CPI	3
 	RNC
 	STA	DISK
 	CALL	VECT
-DISKI:	DW	DRIVEA
-	DW	DRIVEB
-	DW	DRIVEC
+DISKI:	.DW	DRIVEA
+	.DW	DRIVEB
+	.DW	DRIVEC
 VECT:	ADD	A
 	POP	H
 	MOV	E,A
@@ -297,10 +324,11 @@ VECT:	ADD	A
 	MOV	H,M
 	MOV	L,E
 	RET
-READ:	MVI	D,2
+;
+READ:	MVI	D,2	; режим чтения
 	LDA	DISK
 	SUI	2
-	JZ	READ02
+	JZ	READ02	; >> переход к чтению с КД
 	MVI	A,-1
 	RP
 	LXI	H,0
@@ -310,6 +338,7 @@ READ:	MVI	D,2
 	CALL	DRIV
 READSP:	LXI	SP,0
 	RET
+;
 READ02:	CALL	KVDR
 	LXI	H,VDMA
 	SHLD	WRKDMA
@@ -317,6 +346,7 @@ READ04:	PUSH	PSW
 	CALL	READ10
 	POP	PSW
 	RET
+;
 READ10:	LHLD	WRKDMA
 	XCHG
 	LHLD	DMA
@@ -326,7 +356,7 @@ READ11:	XCHG
 	JC	READ12
 	CPI	0E0H
 	JC	READ20
-READ12:	MVI	B,16
+READ12:	MVI	B,16	;<<< читаем из HL, пишем в DE, 128 байт
 	DI
 	PUSH	H
 	LXI	H,2
@@ -360,6 +390,7 @@ READ13:	POP	D
 READ14:	LXI	SP,0
 	EI
 	RET
+;
 READ20:	PUSH	H
 	LXI	H,DIRBUF
 	CALL	HDCMP
@@ -384,6 +415,7 @@ READ22:	LXI	SP,0
 	MVI	B,128
 	CALL	COPY10
 	RET
+;
 SWAPNG:	LXI	H,128
 	LXI	D,VIRT
 	LXI	B,SWAP
@@ -403,16 +435,18 @@ SWAP10:	MOV	A,M
 	INR	L
 	JNZ	SWAP10
 	RET
-HDCMP:	MOV	A,H
+;
+HDCMP:	MOV	A,H	; возврат Z=0, если DE=HL
 	SUB	D
 	RNZ
 	MOV	A,L
 	SUB	E
 	RET
-WRITE:	MVI	D,1
+;
+WRITE:	MVI	D,1	; режим записи
 	LDA	DISK
 	SUI	2
-	JZ	WRITKV
+	JZ	WRITKV	; >> переход к записи на КД
 	MVI	A,-1
 	RP
 	LXI	H,0
@@ -422,27 +456,34 @@ WRITE:	MVI	D,1
 	CALL	DRIV
 WRITSP:	LXI	SP,0
 	RET
-WRITKV:	LXI	H,VDMA
+;
+WRITKV:	LDA	TRACK
+	CPI	180
+	JC	$+6	; < 180 (1)
+	CPI	196
+	RC		; возврат, если (180 <= ТРЕК < 196)
+	LXI	H,VDMA	; <(1)
 	SHLD	WRKDMA
 	CALL	WRIT10
 	MVI	D,1
 	JMP	KVDR
+;
 WRIT10:	LHLD	WRKDMA
 	XCHG
 	LHLD	DMA
 	MOV	A,H
-	CPI	09FH
-	JC	READ12
+	CPI	09FH	; читаем из HL, пишем в DE, 128 байт
+	JC	READ12	; переход, если < 09Fxxh ????? (может надо А0?)
 	CPI	0E0H
-	JNC	READ12
+	JNC	READ12	; переход, если >=0E0xxh
 	PUSH	D
 	LXI	D,DIRBUF
-	CALL	HDCMP
+	CALL	HDCMP	; возврат Z=0, если DE=HL
 	POP	D
-	JZ	READ12
+	JZ	READ12	; переход, если adr(DMA)=adr(DIRBUF)
 	PUSH	H
 	PUSH	D
-	CALL	SWAPNG
+	CALL	SWAPNG	; adr(128-255)-> SWAP, VIRT -> adr(128-255)
 	POP	D
 	DI
 	LXI	H,2
@@ -455,7 +496,7 @@ WRIT10:	LHLD	WRKDMA
 	XCHG
 	DAD	B
 	MVI	C,64
-	CALL	83H
+	CALL	83H	;>>> запись в vird7
 WRIT22:	LXI	SP,0
 	EI
 	LXI	H,SWAP
@@ -463,13 +504,14 @@ WRIT22:	LXI	SP,0
 	MVI	B,128
 	CALL	COPY10
 	RET
-BDWRIT:	PUSH	D
+;
+B.DWRIT:	PUSH	D
 	DI
 	CALL	SWAPNG
 	LXI	H,0
 	POP	D
 	DAD	SP
-	SHLD	BDWR10+1
+	SHLD	B.DWR10+1
 	LXI	H,VRTBUF
 	LXI	B,40
 	DAD	B
@@ -479,12 +521,13 @@ BDWRIT:	PUSH	D
 	LXI	SP,100H
 	MVI	C,20
 	CALL	83H
-BDWR10:	LXI	SP,0
+B.DWR10:	LXI	SP,0
 	LXI	H,SWAP
 	LXI	D,128
 	MVI	B,128
 	EI
 	JMP	COPY10
+;
 BDREAD:	DI
 	PUSH	H
 	CALL	SWAPNG
@@ -502,22 +545,24 @@ BDRD10:	LXI	SP,0
 	MVI	B,128
 	EI
 	JMP	COPY10
+;
 COPY:	LXI	H,PARAM
 	LXI	D,PARAM0
 	MVI	B,7
-COPY10:	MOV	A,M
+COPY10:	MOV	A,M	; копиование из HL в DE, кол-во байт B 
 	STAX	D
 	INX	H
 	INX	D
 	DCR	B
 	JNZ	COPY10
 	RET
-KVDR:	DCR	D
+;
+KVDR:	DCR	D	; 1-запись, 2-чтение
 	MOV	A,D
-	STA	OPER
+	STA	OPER	; 0-запись, 1-чтение
 	PUSH	PSW
 	CALL	COPY
-	CALL	KVRAS
+	CALL	KVRAS	; расчёт адреса сектора на КД
 	POP	PSW
 	JZ	KVWR
 KVRD:	LXI	H,0
@@ -526,18 +571,21 @@ KVRD:	LXI	H,0
 	SHLD	KVDR10+1
 	CALL	RDSIX
 	LHLD	KADR
-	MOV	A,L
-	SUI	80H
-	MOV	L,A
-	JNC	$+4
-	DCR	H
-	SPHL
+	LXI	B,0FF80h	; =-80h
+	DAD	B	; HL=HL-0080h
+;	MOV	A,L
+;	SUI	80H	; !!! может DAD B ???
+;	MOV	L,A
+;	JNC	$+4	; (1)>
+;	DCR	H
+	SPHL		; <(1)
 	LXI	H,VDMA
-	MVI	C,64
-	MVI	B,0
+	LXI	B,0040h	; B=0 (КС), C=64 (счётчик)
+;	MVI	C,64
+;	MVI	B,0
 KVRD10:	LDA	PORT10
-	JMP	10H
-KVRD11:	MOV	A,B
+	JMP	10H	; >>> чтение/запись КД РУ7
+KVRD11:	MOV	A,B	; <<< возврат из ПП 0010h
 	MOV	M,E
 	ADD	E
 	INX	H
@@ -546,23 +594,23 @@ KVRD11:	MOV	A,B
 	ADD	D
 	MOV	B,A
 	DCR	C
-	JNZ	KVRD10
+	JNZ	KVRD10	; цикл чтения сектора
 	MVI	A,1CH
 	LXI	H,KVR11D
 	SHLD	18H
-	LHLD	KCRC
+	LHLD	KCRC	; адрес контрольной суммы
 	SPHL
-	JMP	10H
-KVR11D:	MOV	A,E
+	JMP	10H	; >>> чтение/запись КД РУ7
+KVR11D:	MOV	A,E	; <<< возврат из ПП 0010h
+	CMP	D
+	JNZ	KVRD12	; > ошибка чтения КС (D<>E)
 	CMP	B
-	JNZ	KVRD12
-	CMP	B
-	JZ	KVDR10
-	MOV	A,D
-	CMP	B
-	MOV	E,D
-	JZ	KVRD14
-	MVI	C,2
+	JZ	KVDR10	; > всё ок
+	MVI	C,2	; Ошибка: КС не совпадает
+KVDR09:	MOV	E,B
+	LDA	3FH	; режим обработки ошибок
+	CPI	3	; >=3
+	JNC	KVRD13	; исправление КС по сектору
 KVDR10:	LXI	SP,0
 	MVI	A,P10
 	OUT	10H
@@ -574,20 +622,26 @@ KVDR10:	LXI	SP,0
 	MOV	A,C
 	STA	ERROR
 	ANA	A
-	JNZ	FSWR20
-	RET
-KVRD12:	MOV	A,D
+	RZ		; >> выход, ошибок нет (А= код ошибки, B= КС)
+	JMP	FSWR20	; обработка ошибок
+;
+KVRD12:	CMP	B	; < ошибка чтения КС
+	JZ	KVRD13	; Е совпадает, перезаписываем D
+	MOV	A,D
 	CMP	B
-	MOV	D,E
-	JZ	KVRD14
-	MVI	C,3
-	JMP	KVDR10
+	MOV	E,D
+	JZ	KVRD14	; D совпадает, перезаписываем E
+	MVI	C,3	; Ошибка: вообще ничего не совпало
+	JMP	KVDR09
+;
+KVRD13:	MOV	D,E	; исправление КС
 KVRD14:	LXI	H,KVDR10
 	SHLD	18H
-	MVI	A,0D5H
+	MVI	A,0D5H	; = PUSH D
 	STA	12H
 	MVI	A,1CH
-	JMP	10H
+	JMP	10H	; >>> чтение/запись КД РУ7
+;
 KVWR:	LXI	H,0
 	DI
 	DAD	SP
@@ -596,8 +650,9 @@ KVWR:	LXI	H,0
 	LHLD	KADR
 	LXI	D,128
 	SPHL
-	MVI	C,64
-	MVI	B,0
+	LXI	B,0040h	; B=0 (КС), C=64 (счётчик)
+;	MVI	C,64
+;	MVI	B,0
 	LXI	H,VDMA
 	DAD	D
 KVWR10:	DCX	H
@@ -609,16 +664,17 @@ KVWR10:	DCX	H
 	ADD	E
 	MOV	B,A
 	LDA	PORT10
-	JMP	10H
-KVWR11:	DCR	C
-	JNZ	KVWR10
-	LHLD	KCRC
+	JMP	10H	; >>> чтение/запись КД РУ7
+KVWR11:	DCR	C	; <<< возврат из ПП 10h
+	JNZ	KVWR10	; цикл записи сектора
+	LHLD	KCRC	; адрес контрольной суммы
 	INX	H
 	INX	H
 	SPHL
-	MOV	D,B
+	MOV	D,B	; KC
 	MOV	E,B
-	JMP	KVRD14
+	JMP	KVRD14	; >> запись КС
+;
 RDSIX:	LXI	H,RDRU7
 RDSIX0: LXI	D,10H
 	LXI	B,SIXBUF
@@ -635,30 +691,35 @@ SIXC10:	PUSH	PSW
 	DCR	A
 	JNZ	SIXC10
 	RET
+;
 WRSIX:	LXI	H,WRRU7
 	JMP	RDSIX0
+;
 RDRU7:	OUT	10H
 	POP	D
-	MVI	A,P10
+	MVI	A,P10	; = 20h
 	OUT	10H
 	JMP	KVRD11
+;
 WRRU7:	OUT	10H
 	PUSH	D
-	MVI	A,P10
+	MVI	A,P10	; = 20h
 	OUT	10H
 	JMP	KVWR11
-SIXBUF:	DS	10
-KVRAS:	LDA	TRC0
+;
+SIXBUF:	.DS	10	; <=
+;
+KVRAS:	LDA	TRC0	; <<< расчёт адреса сектора на КД
 	MOV	B,A
 	MVI	A,0FBH
 	SUB	B
 	CPI	0F8H
-	JNC	$+5
+	JNC	$+5	; (1) переход, если трек <= 3 (обход экранной области)
 	SUI	10H
-	CPI	38H
-	JNC	$+5
-	SUI	10H
-	RRC
+;;	CPI	38H	; <-(1)
+;;	JNC	$+5	; (2) переход, если трек <= 179 (обход области РДС)
+;;	SUI	10H
+	RRC		; <-(2)
 	RRC
 	RRC
 	RRC
@@ -679,9 +740,10 @@ KVRS10:	DCR	A
 	JZ	KVRS12
 	DAD	D
 	JMP	KVRS10
-KVRS12:	SHLD	KADR
+;
+KVRS12:	SHLD	KADR	; адрес сектора на КД
 	MOV	A,B
-	STA	PORT10
+	STA	PORT10	; конфигурация порта 10
 	LDA	TRC0
 	MOV	L,A
 	MVI	H,0
@@ -696,15 +758,18 @@ KVRS12:	SHLD	KADR
 	MOV	L,A
 	LXI	D,0F000H
 	DAD	D
-	SHLD	KCRC
+	SHLD	KCRC	; адрес контрольной суммы
 	RET
-KADR:	DW	0
-KCRC:	DW	0
-PORT10:	DB	0
+;
+KADR:	.DW	0
+KCRC:	.DW	0
+PORT10:	.DB	0
+;
 DRIV:	CALL	DRIV20
 	LDA	ERROR
 	ANA	A
 	RET
+;
 DRIV20:	DCR	D
 	MOV	A,D
 	STA	OPER
@@ -724,6 +789,7 @@ DRIV20:	DCR	D
 	JZ	DRIV22
 	CALL	DRIV50
 	JMP	DRIV30
+;
 DRIV50:	LDA	OOPER
 	ANA	A
 	RNZ
@@ -735,6 +801,7 @@ DRIV50:	LDA	OOPER
 	CPI	7
 	RZ
 	JMP	FISWR
+;
 DRIV22:	LDA	OOPER
 	ANA	A
 	JNZ	DRI23V
@@ -751,6 +818,7 @@ DRIV22:	LDA	OOPER
 	CMP	M
 	JNZ	DRIV23
 	JMP	DRI23V
+;
 DRIV23:	LDA	PISAT
 	ANA	A
 	JNZ	DRI23V
@@ -814,6 +882,7 @@ DRIV34:	LDA	SECT0
 	JZ	DRIV35
 	CALL	WRIT10
 	JMP	DRIV36
+;
 DRIV35:	CALL	READ10
 DRIV36:	LDA	OPER0
 	DCR	A
@@ -829,10 +898,12 @@ DRIV36:	LDA	OPER0
 	MVI	A,1
 	STA	PISAT
 	RET
+;
 DRIV40:	XRA	A
 	STA	PISAT
 	CALL	FISWR
 	RET
+;
 TSTHDD:	LXI	H,HDDA
 	LDA	ODISK
 	ANA	A
@@ -842,6 +913,7 @@ TSTHDD:	LXI	H,HDDA
 	INX	H
 	ORA	M
 	RET
+;
 FISRD:	MVI	A,8
 	STA	WOPER
 	CALL	TSTHDD
@@ -886,9 +958,11 @@ FSRD12:	IN	1BH
 	LXI	H,STRSEE
 	CALL	ASK
 	JMP	FISRD
+;
 FSRDNR:	LXI	H,STRNTR
 	CALL	ASK
 	JMP	FSRD00
+;
 FISWR:	MVI	A,8
 	STA	WOPER
 	CALL	TSTHDD
@@ -936,7 +1010,8 @@ FSWR11:	IN	1BH
 	LXI	H,STRSEE
 	CALL	ASK
 	JMP	FISWR
-FSWR20:	LDA	3FH
+;
+FSWR20:	LDA	3FH	; режим обработки ошибок
 	CPI	2
 	RNC
 	DCR	A
@@ -966,9 +1041,11 @@ FSWR20:	LDA	3FH
 	JZ	FSSC10
 	LDA	ERROR
 	RET
+;
 FSWRNR:	LXI	H,STRNTR
 	CALL	ASK
 	JMP	FSWR00
+;
 FSWR22:	MOV	A,M
 	INX	H
 	ANA	A
@@ -976,29 +1053,39 @@ FSWR22:	MOV	A,M
 	MOV	C,A
 	CALL	PRINTC
 	JMP	FSWR22
+;
 KEYE:	CALL	KEY
 	PUSH	PSW
 	MOV	C,A
 	CALL	PRINTC
 	POP	PSW
 	RET
-STR1:	DB 10,'ERR=',0,' OPR=',0,' DSK=',0,' TRK=',0,' SEC=',0
-STR0:	DB 10,' ОШИБКА ДИСКА,ПРОДОЛЖИМ ?',7,0
-STRSEE:	DB 10,' ОШИБКА ПОЗИЦИОНИРОВАНИЯ !',7,0
-STRSE0:	DB 10,'1-Повторить,2-Прервать ?',0
-STRWPR:	DB 10,' ДИСК ЗАЩИЩ╟Н ОТ ЗАПИСИ !',7,0
-STRNTR:	DB 10,' ДИСК НЕ ГОТОВ !',7,0
+;
+STR1:	.DB 10,"ERR=",0," OPR=",0," DSK=",0," TRK=",0," SEC=",0
+STR0:;	.DB 10," ОШИБКА ДИСКА,ПРОДОЛЖИМ ?",7,0
+	.DB 10," я√щтыс фщєыс,ЁЄяфяьЎщэ ?",7,0
+STRSEE:;.DB 10," ОШИБКА ПОЗИЦИОНИРОВАНИЯ !",7,0
+	.DB 10," я√щтыс Ёя·щущяющЄяўсющё !",7,0
+STRSE0:;.DB 10,"1-Повторить,2-Прервать ?",0
+	.DB 10,"1-Ё╧╫╘╧╥╔╘╪,2-Ё╥┼╥╫┴╘╪ ?",0
+STRWPR:;.DB 10," ДИСК ЗАЩИЩ╟Н ОТ ЗАПИСИ !",7,0
+	.DB 10," фщєы ·с¤щ¤░ю яЇ ·сЁщєщ !",7,0
+STRNTR:;.DB 10," ДИСК НЕ ГОТОВ !",7,0
+	.DB 10," фщєы юх чяЇяў !",7,0
+;
 FSSC10:	XRA	A
 	STA	ERROR
 	RET
+;
 PRINTH:	MOV	A,H
 	CALL	0CA15H
 	MOV	A,L
 	JMP	0CA15H
+;
 ASK:	CALL	PRINT
 	LXI	H,STRSE0
 	CALL	PRINT
-	LDA	3FH
+	LDA	3FH	; режим обработки ошибок
 	DCR	A
 	RZ
 	EI
@@ -1007,10 +1094,12 @@ ASK:	CALL	PRINT
 	CPI	31H
 	RZ
 	JMP	0
+;
 WRPROT:	LXI	H,STRWPR
 	CALL	ASK
 	JMP	FSWR00
-PORT1C:	DB	34H
+;
+PORT1C:	.DB	34H
 POWER:	CALL	MOTOR
 	LDA	OTRACK
 	ANA	A
@@ -1040,6 +1129,7 @@ WAIT:	MVI	A,60H
 	DCR	A
 	JNZ	$-1
 	RET
+;
 TRAN99:	XRA	A
 	OUT	1BH
 	CALL	WAIT
@@ -1051,6 +1141,7 @@ TRAN9A:	MOV	A,B
 	CALL	WAIT
 	LDA	FTRACK
 	JMP	TRAN2F
+;
 MOTOR:	LDA	ODISK
 	ANI	3
 	MOV	H,A
@@ -1082,9 +1173,11 @@ MOTR10:	MOV	A,B
 	LXI	H,STRNTR
 	CALL	ASK
 	JMP	MOTR10-3
+;
 NBDSPR:	MOV	C,E
 	JMP	BDPRNT
-NBDOS:	MOV	A,C
+;
+NBDOS:	MOV	A,C	; << сюда в итоге прилетает по call 5
 	CPI	2
 	JZ	NBDSPR
 	LXI	H,TBTRAP
@@ -1101,7 +1194,7 @@ NBDS00:	MOV	A,M
 	JNC	CPM
 	PUSH	D
 	PUSH	B
-	CALL	BDWRIT
+	CALL	B.DWRIT
 	LXI	D,VRTBUF
 	POP	B
 	CALL	CPM
@@ -1113,9 +1206,10 @@ NBDS00:	MOV	A,M
 	POP	D
 	POP	H
 	RET
-TBTRAP:	DB 15,16,17,19,20,21,22,23,30,33,34,35,36,40,0
+;
+TBTRAP:	.DB 15,16,17,19,20,21,22,23,30,33,34,35,36,40,0
 NBDS10:	MOV	A,C
-	CPI	80H
+	CPI	80H	; проверка на функции 80h
 	JNZ	CPM
 	MOV	A,B
 	CPI	16
@@ -1130,9 +1224,9 @@ NBDS10:	MOV	A,C
 	MOV	H,M
 	MOV	L,A
 	PCHL
-NBDSTB:	DW TEST,USED,CINP,COUT,COUCLS,IBAT,BATS
-	DW GBATP,GFBAT,VBIOS,FBAT,SCOM,DCOM
-	DW CHKDSK,GETHDD,SETHDD
+NBDSTB:	.DW TEST,USED,CINP,COUT,COUCLS,IBAT,BATS
+	.DW GBATP,GFBAT,VBIOS,FBAT,SCOM,DCOM
+	.DW CHKDSK,GETHDD,SETHDD
 CHKDSK:	MVI	C,29
 	CALL	CPM
 	XCHG
@@ -1148,6 +1242,7 @@ CHKDSK:	MVI	C,29
 	ORA	H
 	RZ
 	JMP	BDREST
+;
 SCOM:	LXI	H,ACOMBF
 	XCHG
 	MVI	B,12
@@ -1155,12 +1250,14 @@ SCOM:	LXI	H,ACOMBF
 	MVI	A,-1
 	STA	FACOM
 	RET
+;
 DCOM:	INR	E
 	LDA	FACOM
 	RZ
 	XRA	A
 	STA	FACOM
 	RET
+;
 VBIOS:	XCHG
 	MOV	E,M
 	INX	H
@@ -1175,6 +1272,7 @@ VBIOS:	XCHG
 	PCHL
 GFBAT:	LDA	FLBAT
 	RET
+;
 GBATP:	XCHG
 	MOV	C,M
 	INX	H
@@ -1199,6 +1297,7 @@ GBAT05:	CALL	GBAT02
 	INX	H
 	JNZ	GBAT05
 	JMP	GBAT04
+;
 GBAT06:	MOV	A,M
 	STAX	D
 	INX	H
@@ -1210,8 +1309,10 @@ GBAT07:	XRA	A
 	STAX	D
 	XCHG
 	RET
+;
 GBAT10:	MVI	A,-1
 	RET
+;
 GBAT02:	MOV	A,M
 	CPI	20H
 	RZ
@@ -1222,6 +1323,7 @@ GBAT02:	MOV	A,M
 	RZ
 	CMC
 	RET
+;
 CINP:	LDAX	D
 	ANA	A
 	JNZ	CINP02
@@ -1258,6 +1360,7 @@ CINP02:	LXI	H,CINPBF
 	SHLD	CBIOS+10
 CINP10:	XRA	A
 	RET
+;
 IBAT:	LDAX	D
 	ANA	A
 	JNZ	IBAT02
@@ -1296,11 +1399,13 @@ IBAT04:	XRA	A
 	STA	BTKLAV
 IBAT10:	XRA	A
 	RET
+;
 FBAT:	LXI	H,80H
 	LXI	D,BATDMA
 	MVI	B,128
 	CALL	COPY10
 	JMP	IBAT04
+;
 COUT:	LDAX	D
 	ANA	A
 	JNZ	COUT02
@@ -1340,6 +1445,7 @@ COUT02:	LXI	H,COUTBF
 	SHLD	CBIOS+13
 	XRA	A
 	RET
+;
 COUCLS:	LDA	FLCOUT
 	ANA	A
 	RZ
@@ -1355,10 +1461,12 @@ COUCLS:	LDA	FLCOUT
 	LXI	H,PRINTC
 	SHLD	CBIOS+13
 	RET
+;
 COUPRN:	LXI	H,COUDAT
 	CALL	WACCES
 	CNZ	COUCLS
 	JMP	PRINTC
+;
 CINKEY:	LDA	FLCINP
 	INR	A
 	JNZ	CINK10
@@ -1370,6 +1478,7 @@ CINK10:	XRA	A
 	LXI	H,KEY
 	SHLD	CBIOS+10
 	JMP	KEY
+;
 BATS:	LDA	FLBAT
 	ANA	A
 	MVI	A,1AH
@@ -1381,6 +1490,7 @@ BATS:	LDA	FLBAT
 	STA	FLBAT
 	MVI	A,1AH
 	RET
+;
 CINK00:	DCX	H
 	MOV	A,M
 	CPI	-1
@@ -1405,12 +1515,15 @@ CINK08:	CPI	1AH
 	RNZ
 CINK09:	XRA	A
 	RET
+;
 TS0D0A:	CPI	10
 	RZ
 	CPI	13
 	RET
+;
 WACCES:	MVI	A,-1
 	JMP	ACCES
+;
 RACCES:	XRA	A
 ACCES:	STA	ACCTYP
 	PUSH	H
@@ -1439,9 +1552,11 @@ ACCE10:	INR	M
 	MOV	A,M
 	POP	H
 	RET
+;
 ACCE12:	MOV	M,C
 	POP	H
 	RET
+;
 ACCE20:	XCHG
 	LHLD	BDDAT
 	PUSH	H
@@ -1483,6 +1598,7 @@ ACCE21:	POP	H
 	POP	H
 	SHLD	BDDAT
 	RET
+;
 ACCE22:	PUSH	D
 	PUSH	B
 	LXI	H,DIRBUF
@@ -1503,27 +1619,48 @@ ACCE22:	PUSH	D
 	POP	PSW
 	ANA	A
 	JMP	ACCE21
+;
 HLA:	ADD	L
 	MOV	L,A
 	RNC
 	INR	H
 	RET
-TEST:	LDA	3FH
+;
+; тестирование КД: вход DE
+; D= номер диска; E= Х-тест, 1-восстановить КС, 2-форматирование
+TEST:	LDA	3FH	; режим обработки ошибок
 	PUSH	PSW
 	MVI	A,2
-	STA	3FH
+	CMP	E
+	JC	TST0	; E>2 (тест КД)
+	JZ	TST0	; E=2 (форматирование КД)
+	ADD	E	; тест с исправлением КС
+TST0:	STA	3FH	; режим обработки ошибок
+	MOV	C,D	; установка диска
+	PUSH	D
+	CALL	SELDSK
+	POP	D
+	LXI	B,000Ah
+	DAD	B	; HL = ссылка на пареметры диска (DRIVEC)
+	MOV	A,M
+	INX	H
+	MOV	H,M
+	MOV	L,A	; HL = ссылка на PARC
+	MVI	C,5
+	DAD	B	; HL = ссылка на количество секторов
+	MOV	A,M	; начальный трек (235, тестируем с конца КД)
+	STA	TRACK
+	MVI	A,8	; начальный сектор
+	STA	SECT
 	LXI	H,DIRBUF
 	SHLD	DMA
-	XRA	A
-	STA	TRACK
-	INR	A
-	STA	SECT
-	MVI	C,2
-	CALL	SELDSK
-TEST20:	CALL	READ
+	; + проверку E=2 и форматирование
+TEST20:	MVI	D,2	; режим чтения
+	CALL	KVDR
+;	CALL	READ	; чтение сектора
 	ANA	A
 	JZ	TEST22
-	LXI	H,STRTS
+	LXI	H,STRTS	; вывод ошибки
 	CALL	FSWR22
 	LDA	ERROR
 	CALL	HEXOUT
@@ -1533,69 +1670,76 @@ TEST20:	CALL	READ
 	CALL	FSWR22
 	LDA	SECT
 	CALL	HEXOUT
+	LDA	3FH	; режим обработки ошибок
+	CPI	3
+	CNC	FSWR22	; "исправлено"
 TEST22:	LXI	H,SECT
-	INR	M
-	MOV	A,M
-	CPI	9
-	JC	TEST20
-	MVI	M,1
+	DCR	M
+	JNZ	TEST20	; цикл по секторам 8..1
+	MVI	M,8
 	LXI	H,TRACK
-	INR	M
+	DCR	M
 	MOV	A,M
-	CPI	220
-	JC	TEST20
-	POP	PSW
-	STA	3FH
+	INR	A	; CPI	0FFh
+	JNZ	TEST20	; цикл по трекам 235..0
+TSTOK:	POP	PSW
+	STA	3FH	; режим обработки ошибок
 	XRA	A
 	RET
-STRTS:	DB 10,'ОШИБКА КВАЗИДИСКА -',0
-	DB ',ДОРОЖКА -',0,',СЕКТОР -',0
-ZAGA:	DW 0,0,0,0,DIRBUF,PARA,CSVA,ALVA
-ZAGB:	DW 0,0,0,0,DIRBUF,PARB,CSVB,ALVB
-ZAGC:	DW 0,0,0,0,DIRBUF,PARC,0,ALVC
-PARA:	DW 40
-	DB 4,15,0
-	DW 187H,127,0C0H,32,8
-PARB:	DW 40
-	DB 4,15,0
-	DW 187H,127,0C0H,32,8
-PARC:	DW 8
-	DB 3,7,0
-	DW 219,63,0C0H,0,0
-DIRBUF:	DS	128
-CSVA:	DS	32
-CSVB:	DS	32
-ALVA:	DS	51
-ALVB:	DS	51
-ALVC:	DS	33
-TTRC:	DB 0,0
-PARAM0:	DS	7
-PARAM:	DS	7
-ODISK:	DB	-1
-OTRACK:	DB	-1
-OOPER:	DB	1
-OSECT:	DB	-1
-RSECT:	DB	-1
-PISAT:	DB	0
-DISK:	EQU	PARAM
-ERROR:	EQU	3DH
-OPER:	EQU	PARAM+2
-TRACK:	EQU	PARAM+3
-SECT:	EQU	PARAM+4
-DMA:	EQU	PARAM+5
-DISK0:	EQU	PARAM0
-OPER0:	EQU	PARAM0+2
-TRC0:	EQU	PARAM0+3
-SECT0:	EQU	PARAM0+4
-DRIVEA:	EQU	ZAGA
-DRIVEB:	EQU	ZAGB
-DRIVEC:	EQU	ZAGC
-DMA0:	EQU	PARAM0+5
-VRTBUF:	DS	40
-OSECT0:	DB	0
-WRKDMA:	DW	0
-USED:	MVI	C,31
-	CALL	CPM
+;
+STRTS:;	.DB 10,"ОШИБКА КВАЗИДИСКА -",0
+	.DB 10,"я√щтыс ыўс·щфщєыс -",0
+;	.DB ",ДОРОЖКА -",0,",СЕКТОР -",0
+	.DB ",фяЄяЎыс -",0,",єхыЇяЄ -",0
+;	.DB " -ИСПРАВЛЕНО",0
+	.DB " -щєЁЄсўьхюя",0
+ZAGA:	.DW 0,0,0,0,DIRBUF,PARA,CSVA,ALVA
+ZAGB:	.DW 0,0,0,0,DIRBUF,PARB,CSVB,ALVB
+ZAGC:	.DW 0,0,0,0,DIRBUF,PARC,0,ALVC
+PARA:	.DW 40
+	.DB 4,15,0
+	.DW 187H,127,0C0H,32,8
+PARB:	.DW 40
+	.DB 4,15,0
+	.DW 187H,127,0C0H,32,8
+PARC:	.DW 8			; ещё одна таблица в virt.asm, строка 183
+	.DB 3,7,0
+	.DW 235,63,0C0H,0,0	; 219...
+DIRBUF:	.DS	128	; <=
+CSVA:	.DS	32	; <=
+CSVB:	.DS	32	; <=
+ALVA:	.DS	51	; <=
+ALVB:	.DS	51	; <=
+ALVC:	.DS	33	; <=
+TTRC:	.DB 0,0
+PARAM0:	.DS	7	; <=
+PARAM:	.DS	7	; <=
+ODISK:	.DB	-1
+OTRACK:	.DB	-1
+OOPER:	.DB	1
+OSECT:	.DB	-1
+RSECT:	.DB	-1
+PISAT:	.DB	0
+DISK:	.EQU	PARAM
+ERROR:	.EQU	3DH
+OPER:	.EQU	PARAM+2
+TRACK:	.EQU	PARAM+3
+SECT:	.EQU	PARAM+4
+DMA:	.EQU	PARAM+5
+DISK0:	.EQU	PARAM0
+OPER0:	.EQU	PARAM0+2
+TRC0:	.EQU	PARAM0+3
+SECT0:	.EQU	PARAM0+4
+DRIVEA:	.EQU	ZAGA
+DRIVEB:	.EQU	ZAGB
+DRIVEC:	.EQU	ZAGC
+DMA0:	.EQU	PARAM0+5
+VRTBUF:	.DS	40	; <=
+OSECT0:	.DB	0
+WRKDMA:	.DW	0
+;
+USED:	MVI	C,31	; <<<< функция 1/80h -- свободно на диске, Кб
+	CALL	CPM	; Получение адреса блока параметров диска
 	INX	H
 	INX	H
 	MOV	A,M
@@ -1607,12 +1751,12 @@ USED:	MVI	C,31
 	MOV	A,M
 	INX	H
 	MOV	H,M
-	MOV	L,A
+	MOV	L,A	; HL = (число секторов диска) - 1
 	INX	H
 	PUSH	H
 	PUSH	H
 	MVI	C,27
-	CALL	CPM
+	CALL	CPM	; Получить адрес вектора распределения диска ALVC
 	POP	D
 	LXI	B,0
 USED10:	PUSH	H
@@ -1621,9 +1765,9 @@ USED10:	PUSH	H
 USED12:	MOV	A,L
 	RLC
 	MOV	L,A
-	JC	$+4
+	JC	$+4	; (1)>
 	INX	B
-	DCX	D
+	DCX	D	; <(1)
 	MOV	A,D
 	ORA	E
 	JZ	USED14
@@ -1632,6 +1776,7 @@ USED12:	MOV	A,L
 	POP	H
 	INX	H
 	JMP	USED10
+;
 USED14:	POP	H
 	POP	D
 	MOV	H,B
@@ -1645,47 +1790,48 @@ USED14:	POP	H
 	DAD	H
 	XCHG
 	RET
+;
 FILL:	MOV	M,C
 	INX	H
 	DCR	B
 	JNZ	FILL
 	RET
-KLAV:	DB	0
+;
+KLAV:	.DB	0
 CINDAT:
-CINSCN:	DB	0
-	DW	CINDMA
-	DW	CINPBF
-FLCINP:	DB	0
+CINSCN:	.DB	0
+	.DW	CINDMA
+	.DW	CINPBF
+FLCINP:	.DB	0
 COUDAT:
-COUSCN:	DB	0
-	DW	COUDMA
-	DW	COUTBF
-FLCOUT:	DB	0
-BTKLAV:	DB	0
+COUSCN:	.DB	0
+	.DW	COUDMA
+	.DW	COUTBF
+FLCOUT:	.DB	0
+BTKLAV:	.DB	0
 BATDAT:
-BATSCN:	DB	0
-	DW	BATDMA
-	DW	BATBF
-FLBAT:	DB	0
-ACCTYP:	DB	0
-FACOM:	DB	0
-CINPBF:	DS	36
-CINDMA:	EQU	ZAPL
-COUTBF:	DS	36
-COUDMA:	EQU	ZAPL2
-BATBF:	DS	36
-BATDMA:	DS	128
-HDDA:	DB	1,0,2,0,0
-HDDB:	DB	0,0,0,0,0
-HDDAT:	DW	APAR0
-	DW	APAR1
-	DW	APAR2
+BATSCN:	.DB	0
+	.DW	BATDMA
+	.DW	BATBF
+FLBAT:	.DB	0
+ACCTYP:	.DB	0
+FACOM:	.DB	0
+CINPBF:	.DS	36	; <=
+CINDMA:	.EQU	ZAPL
+COUTBF:	.DS	36	; <=
+COUDMA:	.EQU	ZAPL2
+BATBF:	.DS	36	; <=
+BATDMA:	.DS	128	; <=
+HDDA:	.DB	1,0,2,0,0
+HDDB:	.DB	0,0,0,0,0
+HDDAT:	.DW	APAR2+1	; -- адрес для сохранения (10000h - (число дискет))
+;
 SETHDD:	LDA	4
 	CPI	2
 	MOV	C,A
 	MVI	A,0FFH
 	RNC
-APAR2:	LXI	H,-1
+APAR2:	LXI	H,-1	; <= значение меняется из RDSH  -- (10000h - (число дискет))
 	DAD	D
 	RC
 	LXI	H,HDDB
@@ -1696,10 +1842,10 @@ APAR2:	LXI	H,-1
 	INX	H
 	MOV	M,D
 	PUSH	H
-	LXI	H,0F3BEH
+	LXI	H,0F3BEH	; = 2 - 0622h * 2
 	MVI	A,-1
 	INX	D
-SETH10:	LXI	B,1570
+SETH10:	LXI	B,1570	; = 0622h -- суммарное количество секторов на одной дискете
 	DAD	B
 	ACI	0
 	DCX	D
@@ -1718,6 +1864,7 @@ SETH10:	LXI	B,1570
 	MOV	M,A
 	XRA	A
 	RET
+;
 GETHDD:	LHLD	APAR2+1
 	CALL	NEGHL
 	DCX	H
@@ -1732,6 +1879,7 @@ GETHDD:	LHLD	APAR2+1
 	POP	H
 	XCHG
 	RET
+;
 NEGHL:	MOV	A,L
 	CMA
 	MOV	L,A
@@ -1740,9 +1888,10 @@ NEGHL:	MOV	A,L
 	MOV	H,A
 	INX	H
 	RET
-WRHDD:	MVI	C,1
+;
+WRHDD:	MVI	C,10h	; C<>0 признак записи
 	JMP	HDD
-RDHDD:	MVI	C,0
+RDHDD:	MVI	C,0	; C=0 признак чтения
 HDD:	PUSH	H
 	LHLD	OTRACK
 	MVI	H,000H
@@ -1750,25 +1899,27 @@ HDD:	PUSH	H
 	MOV	E,L
 	DAD	H
 	DAD	H
-	DAD	D
+	DAD	D	; HL= дорожка * 5
 	LDA	OSECT
 	MOV	E,A
 	MVI	D,0
 	DAD	D
-	DAD	H
-	LDA	OTRACK
+	DAD	H	; HL= дорожка * 10 + сектор * 2
+	LDA	OTRACK	; дорожка, = FFh при инициализации НЖМД (чтении 1-го сектора)
 	CPI	8
-	JNC	AD85F
+	JNC	AD85F	; переход если дорожка >= 08h (несистемная область)
 	POP	D
 	LXI	D,2
 	XRA	A
 	JMP	AD86C
+;
 AD853:	POP	D
 	CPI	0FFH
-	LXI	D,0F60AH	;ЧТО БЫ 0 СЕКТ.
+	LXI	D,0F60AH	; = -09F6h	;ЧТО БЫ 0 СЕКТ.
 	JZ	AD86C
 	JMP	HDDERR
-AD85F:	CPI	0A5H
+;
+AD85F:	CPI	0A5H	; максимальный номер дорожки 0A4h
 	JNC	AD853
 	XTHL
 	INX	H
@@ -1776,59 +1927,50 @@ AD85F:	CPI	0A5H
 	INX	H
 	MOV	D,M
 	INX	H
-	MOV	A,M
+	MOV	A,M	; (A,DE)=(номер первого сектора дискеты)
 	POP	H
 AD86C:	DAD	D
 	ACI	000H
-	MOV	E,L
-	MOV	L,H
-	MOV	H,A
+	MOV	E,A	; (E,HL) = (номер сектора) + (номер первого сектора дискеты) = 00 0000h
 	CALL	READY
 	JZ	HDDERR
-	PUSH	D
-	CALL	AD8F3	;ВЫЧ. СТ.БТ.ЦИЛ
-	OUT	055H
-	POP	D
-	MOV	H,L
-	MOV	L,E
-	CALL	AD8F3	;МЛ.БТ.ЦИЛ.
-	OUT	054H
-APAR0:	LXI	D,0FF00H
-	CALL	AD904
-	LXI	D,00010H
-	CALL	AD8FC
-	OUT	056H
+	MOV	A,E
+	OUT	055H	; LBA [23..16]
 	MOV	A,L
-	INR	A
-	OUT	053H
-REPOP:	MVI	A,2
-	OUT	052H
+	OUT	053H	; LBA [7..0]
+	MOV	A,H
+	OUT	054H	; LBA [15..8]
+	MVI	A,0E0h	; 1110 0000
+	OUT	056H	; режим и LBA[27..24]
+REPOP:	MVI	A,2	; количество читемых/записываемых секторов
+	OUT	052H	; Счетчик числа секторов для операции чтения/записи
 	LXI	H,RDMA
-	MVI	A,020H
-	INR	C
-	DCR	C
-	JZ	AD8A9
-	MVI	A,030H
-AD8A9:	OUT	057H
-	MVI	E,2
+	MVI	A,020H	; A = 2xH - сектор чтения (x = retry and ECC-read)
+	ADD	C	; A = 3xH - сектор записи
+	OUT	057H
+	MVI	E,2	; счётчик секторов
 AD8AD:	CALL	READY
 	JZ	ERHDD
-	IN	057H
-	ANI	008H
+;;;	IN	057H
+	ANI	008H	; 0000 1000 :	запрос данных. Буфер ждет данных (занято)
 	JZ	ERHDD
-	MVI	B,2
+	MVI	B,2	; 2*256 -- размер сектора НЖМД
 AD8BC:	INR	C
-	DCR	C
+	DCR	C	; установка признака Z по C
 	JNZ	AD8CF
-AD8C1:	IN	050H
+AD8C1:	IN	050H	; чтение с НЖМД
 	MOV	M,A
 	INR	L
 	IN	058H
 	MOV	M,A
 	INR	L
 	JNZ	AD8C1
+	INR	H
+	DCR	B
+	JNZ	AD8C1	; цикл чтения сектора НЖМД
 	JMP	AD8DC
-AD8CF:	INR	L
+;
+AD8CF:	INR	L	; запись на НЖМД
 	MOV	A,M
 	OUT	058H
 	DCR	L
@@ -1837,70 +1979,60 @@ AD8CF:	INR	L
 	INR	L
 	INR	L
 	JNZ	AD8CF
-AD8DC:	INR	H
+	INR	H
 	DCR	B
-	JNZ	AD8BC
-	DCR	E
+	JNZ	AD8CF	; цикл записи сектора НЖМД
+AD8DC:	DCR	E
 	JNZ	AD8AD
 	CALL	READY
 	JZ	ERHDD
-	ANI	0DDH
-	CPI	050H
+	ANI	0DDH	; 1101 1101 -- маскируем лишнее
+	CPI	050H	; норм. код возврата
 	RZ
 ERHDD:	LXI	H,WOPER
 	DCR	M
 	JNZ	REPOP
 	JMP	HDDERR
-APAR1:
-AD8F3:	LXI	D,0FC00H
-	CALL	AD904
-	LXI	D,00040H
-AD8FC:	MVI	B,0FFH
-AD8FE:	ADD	B
-	DAD	D
-	JNC	AD8FE
-	RET
-AD904:	XRA	A
-	MVI	B,010H
-AD907:	ADD	B
-	DAD	D
-	JC	AD907
-	RET
+;
 READY:	PUSH	D
 	PUSH	B
-	MVI	D,005H
-AD9DD:	IN	057H
-	ANI	0C0H
-	CPI	040H
-	JZ	AD9F2
+	MVI	D,005H	; пять раз...
+AD9DD:	IN	057H	; регистр статуса
+	ANI	0C0H	; 1100 0000
+	CPI	040H	; 0100 0000 устройство готово к операции
+	JZ	AD9F2	; >> выход из цикла, при выходе A=40h
 	DCX	B
 	MOV	A,B
 	ORA	C
-	JNZ	AD9DD
+	JNZ	AD9DD	; цикл на 65536 попыток
 	DCR	D
-	JNZ	AD9DD
-	OUT	05FH
+	JNZ	AD9DD	; цикл на 5*65536 попыток, при выходе A,B,C,D=0
+;;;	OUT	05FH	; <= !!!!!
 AD9F2:	ANA	A
 	POP	B
 	POP	D
 	IN	057H
-	RET
-HDDERR:	IN	057H
-	RRC
-	IN	051H
-	JC	ADA02
-	XRA	A
-ADA02:	MOV	B,A
-	IN	057H
-	ANI	020H
+	RET		; <= !!!!!
+;
+HDDERR:;IN	057H	; регистр статуса
+	RRC		; сдвиг вправо, бит 0 заносится в признак С
+	IN	051H	; Чтение:	Регистр ошибок. Содержит признаки последней ошибки.
+	JC	ADA02	; если предыдущая команда закончилась с ошибкой
+	XRA	A	; ошибки нет
+ADA02:	MOV	B,A	; В = код ошибки
+	IN	057H	; регистр статуса
+	ANI	020H	; выделяем ошибку "сбой записи"
 	ORA	B
-	MOV	B,A
+	MOV	B,A	; дополняем код ошибки в В
 	IN	057H
-	ANI	0C0H
-	CPI	040H
-	MOV	A,B
-	JZ	ADA15
-	ORI	010H
-ADA15:	OUT	05FH
-	STA	ERROR
-	JMP	FSWR20	;На обработку ошибки
+	ANI	0C0H	; выделение сигналов "устройство готово" и "занято"
+	CPI	040H	; уст.Z если "готово"
+	MOV	A,B	; код ошибки в A
+	JZ	ADA15	; переход, если сигнал "готово"
+	MVI     A,10h	; 1xH = сброс на цилиндр 0 (x = step rate)
+	OUT	05FH	; Системный сброс (лучше не пользоваться, сходство с 57Н без обнуления микросхем жесткого диска).
+ADA15:	STA	ERROR
+	JMP	FSWR20	; На обработку ошибки
+	.org 0BFBFh	; выравнивание размера
+	.db 0
+	.END
