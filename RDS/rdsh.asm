@@ -1,51 +1,73 @@
-	ORG	100H
+;(перед компилированием преобразовать в CP866)
+	.ORG	100H
+;#DEFINE NoPACK
 	LXI	SP,80H
 	JMP	START
-SELDSK:	EQU	0FB1BH
-SETTRK:	EQU	0FB1EH
-SETSEC:	EQU	0FB21H
-SETDMA:	EQU	0FB24H
-WRITE:	EQU	0FB2AH
-READ:	EQU	0FB27H
-OS:	EQU	400H
-STRA:	EQU	OS+60H
-RDS:	EQU	OS+100H
-COM:	EQU	RDS+4000H
-STR0:	DB 12,27,'/',27,'b'
-DB '(c) Резидентная Дисковая Система.              Версия 3.00 '
- DB 10
-DB '(c) Вьюнов В.А.   Copyright (c) 1994-1996 by Vitaly Vewnov.'
- DB 10,'Сентября 14 числа 1996г. от Р.Х..',10,27,'a$'
-STR1:	DB 10,'Квази-диск отформатирован.$'
-STR2:	DB 10,'Форматирование диска C:.$'
-STRHDD:	DB 10,'Инициализация HDD...$'
-STRHDE:	DB 10,'Ошибка !$'
+SELDSK:	.EQU	0FB1BH
+SETTRK:	.EQU	0FB1EH
+SETSEC:	.EQU	0FB21H
+SETDMA:	.EQU	0FB24H
+WRITE:	.EQU	0FB2AH
+READ:	.EQU	0FB27H
+;OS:	.EQU	400H
+STRA:	.EQU	OS+60H
+COM:	.EQU	OS+100H
+RDS:	.EQU	COM+2818	; << + размер файла ccph.obj
+STR0:	.DB 12,27,'/',27,'b'
+;	.DB "(c) Резидентная Дисковая Систем"
+	.DB "(c) Є┼┌╔─┼╬╘╬┴╤ ф╔╙╦╧╫┴╤ є╔╙╘┼═"
+;	.DB "а.              Версия 3.05 "
+	.DB "┴.              ў┼╥╙╔╤ 3.05 "
+	.DB 10
+;	.DB "(c) Вьюнов В.А.   Copyright (c)"
+	.DB "(c) ў╪└╬╧╫ ў.с.   Copyright (c)"
+	.DB " 1994-1997 by Vitaly Vewnov."
+	.DB 10
+;	.DB " Марта 24 числа 1997г. от Р.Х."
+	.DB " э┴╥╘┴ 24 ▐╔╙╠┴ 1997╟. ╧╘ Є.ш."
+	.DB 10,27,'a'
+;	.DB "Модификация 04.06.2021г., Impro"
+	.DB "э╧─╔╞╔╦┴├╔╤ 04.06.2021╟., Impro"
+	.DB "ver",10,'$'
+STR1:;	.DB 10,"Квази-диск отформатирован.$"
+	.DB 10,"ы╫┴┌╔-─╔╙╦ ╧╘╞╧╥═┴╘╔╥╧╫┴╬.$"
+STR2:;	.DB 10,"Форматирование диска C:.$"
+	.DB 10,"ц╧╥═┴╘╔╥╧╫┴╬╔┼ ─╔╙╦┴ C:.$"
+STRHDD:;.DB 10,"Инициализация HDD...$"
+	.DB 10,"щ╬╔├╔┴╠╔┌┴├╔╤ HDD...$"
+STRHDE:;.DB 10,"Ошибка !$"
+	.DB 10,"я█╔┬╦┴ !$"
 START:	DI
-	MVI	A,20H
+	MVI	A,20H		; 0010 0000 -- банк 3 как ОЗУ A000-DFFFh
 	OUT	10H
-	LXI	H,RDS
-	LXI	D,0A000H
+	LXI	H,RDS		; откуда
+	LXI	D,0A000H	; куда
+#ifdef NoPACK
 BEGIN:	MOV	A,M
 	STAX	D
 	INX	H
 	INX	D
 	MOV	A,D
 	CPI	0E0H
-	JC	BEGIN
+	JC	BEGIN		; цикл до адреса E000h
+#else
+	CALL	unlzsa1		; распаковка
+#endif
 	CALL	0CA00H
-	LXI	H,'РД'
+	LXI	H,0E4F2h	; ='РД'
 	SHLD	11
-	LXI	H,30F3H
+	LXI	H,30F3H		; ='С' 3.0
 	SHLD	13
 	LXI	SP,0
 	EI
 	LXI	D,STR0
 	MVI	C,9
 	CALL	5
+; <<+++ тест на 2 КД
 	IN	1
 	ANI	40H
-	JNZ	EXIT
-	LXI	D,STR2
+	JNZ	EXIT	; >>> переход, если не нажата УС
+	LXI	D,STR2	; "Форматирование..."
 	MVI	C,9
 	CALL	5
 	LXI	H,80H
@@ -56,7 +78,7 @@ FORM10:	MVI	M,0E5H
 	CALL	SETDMA
 	MVI	C,2
 	CALL	SELDSK
-	LXI	D,1
+	LXI	D,0EB08h ; начальное значение, D=235 (трек), E=8 (сектор)
 FORM11:	PUSH	D
 	MOV	C,D
 	CALL	SETTRK
@@ -66,48 +88,101 @@ FORM12:	PUSH	D
 	CALL	SETSEC
 	CALL	WRITE
 	POP	D
-	INR	E
-	MVI	A,9
-	CMP	E
-	JNZ	FORM12
-	MVI	E,1
-	INR	D
-	MVI	A,220
-	CMP	D
-	JNZ	FORM11
-	LXI	D,STR1
+	DCR	E
+	JNZ	FORM12	; цикл по секторам 8..1
+	MVI	E,8
+	DCR	D
+	MOV	A,D
+	CPI	180
+	JC	FORM11	; < 180
+	INR	A	;CPI	0FFh
+	JZ	FORMOK	; >>>
+	CPI	197
+	JNC	FORM11	; >= 196
+	MVI	D,179	;SUI	10h
+			;MOV	D,A
+	JMP	FORM11	; цикл с пропуском треков 180-195
+;
+FORMOK:	LXI	D,STR1	; "КД отформатирован"
 	MVI	C,9
 	CALL	5
-	MVI	E,2
-	MVI	C,14
+	LXI	H,FILE0+1
+	MVI	M,'O'
+	INX	H
+	MVI	M,'S'
+	INX	H
+	MVI	M,' '	; переименовываем в OS.COM
+EXIT:	MVI	E,2	;
+	MVI	C,14	; Выбор диска 2 (КД)
 	CALL	5
-	LXI	B,0D80H
+	LXI	B,0D80H	; Проверка текущего диска на статус Read only,если он установлен то "сброс".
 	CALL	5
+	MVI	A,3	; исправление КС секторов под RDS.SYS
+	STA	3FH
+	LXI	D,0C308h ; начальное значение, D=195 (трек), E=8 (сектор)
+REP11:	PUSH	D
+	MOV	C,D
+	CALL	SETTRK
+	POP	D
+REP12:	PUSH	D
+	MOV	C,E
+	CALL	SETSEC
+	CALL	READ	; чтение с исправлением КС
+	POP	D
+	DCR	E
+	JNZ	REP12	; цикл по секторам 8..1
+	MVI	E,8
+	DCR	D
+	MVI	A,179
+	CMP	D
+	JC	REP11	; цикл по трекам, >= 180
 	XRA	A
 	STA	3FH
-	MVI	A,2
+	MVI	A,2	; сколько секторов (по 128 байт)
 	STA	WSECT
-	LXI	H,OS
+	LXI	H,OS	; откуда
 	SHLD	DMA
 	LXI	H,FILE0
-	CALL	SAVE
-	MVI	A,23
+	CALL	SAVE	; сохр.файла OS.COM / RDS.COM
+	MVI	A,23	; сколько секторов (по 128 байт)
 	STA	WSECT
-	LXI	H,COM
+	LXI	H,COM	; откуда
 	SHLD	DMA
 	LXI	H,FILE1
-	CALL	SAVE
-EXIT:	CALL	INIHDD
-	MVI	C,13
+	CALL	SAVE	; сохр.файла COMMAND.SYS
+	LXI	H,80H	; откуда
+	SHLD	DMA
+SRDS:	MVI	A,0	; сколько секторов (по 128 байт)
+	STA	WSECT
+	LXI	H,FILE2
+	CALL	SAVE	; сохр.файла RDS.SYS
+; исправление записи файла
+	LXI	B,80H
+	CALL	SETDMA
+;	MVI	C,2	; КД
+;	CALL	SELDSK
+	MVI	C,0	; трек 0
+	CALL	SETTRK
+	CALL	FIND	; поиск записи
+	JNZ	SKP1	; найдено -- пропускаем трек 1
+	MVI	C,1	; трек 1
+	CALL	SETTRK
+	CALL	FIND	; поиск записи
+	JZ	SRDS	; не нашли????
+SKP1:	CALL	WRITE	; сохраняем каталог
+;
+	CALL	INIHDD	;<<<
+	MVI	C,13	; сброс дисков
 	CALL	5
-	MVI	E,10
+	MVI	E,10	; <ПС>
 	MVI	C,2
 	CALL	5
-	LXI	D,STRA+1
+	LXI	D,STRA+1	; надпись РДС в прямоугольнике
 	MVI	C,9
 	CALL	5
 	JMP	0
-INIHDD:	LXI	D,STRHDD
+;
+INIHDD:	LXI	D,STRHDD	;"Инициализация HDD...$"
 	MVI	C,9
 	CALL	5
 	LXI	B,80H
@@ -125,18 +200,19 @@ INIH10:	PUSH	B
 	CALL	READ
 	ANA	A
 	POP	B
-	JZ	INIH12
+	JZ	INIH12	; >>> всё ок!
 	DCR	B
-	JNZ	INIH10
+	JNZ	INIH10	; цикл, 4 попытки
 	XRA	A
 	STA	3FH
-	LXI	D,STRHDE
+	LXI	D,STRHDE	; "Ошибка"
 	MVI	C,9
 	CALL	5
 	LXI	D,0
-	LXI	B,0F80H
+	LXI	B,0F80H	; SETHDD -- Установка номера 0 дискеты HDD
 	JMP	5
-INIH12:	DI
+;
+INIH12:	DI		; занесение характеристик НЖМД в БСВВ
 	XRA	A
 	STA	3FH
 	MVI	A,20H
@@ -146,77 +222,35 @@ INIH12:	DI
 	DAD	D
 	MOV	E,M
 	INX	H
-	MOV	D,M
+	MOV	D,M	; DE = HDDAT (BIOS)
 	XCHG
 	MOV	E,M
 	INX	H
 	MOV	D,M
-	INX	H
-	PUSH	D
-	MOV	E,M
-	INX	H
-	MOV	D,M
-	INX	H
-	MOV	A,M
-	INX	H
-	MOV	H,M
-	MOV	L,A
-	INX	H
+	XCHG		; HL = APAR2+1 (BIOS)
 	SHLD	APAR2+1
-	XCHG
-	INX	H
-	SHLD	APAR10+1
-	LXI	D,6
-	DAD	D
-	SHLD	APAR1+1
-	POP	H
-	INX	H
-	SHLD	APAR00+1
-	DAD	D
-	SHLD	APAR0+1
-	LDA	80H
-	MOV	L,A
-	MVI	H,0
-	PUSH	H
-APAR0:	SHLD	0
-	CALL	MUL16
-APAR00:	SHLD	0
-	POP	D
-	LXI	H,0
-	LDA	81H
-INIH14:	DAD	D
-	DCR	A
-	JNZ	INIH14
-APAR1:	SHLD	0
-	CALL	MUL16
-APAR10:	SHLD	0
-	LHLD	84H
-	INX	H
-	CALL	NEG
-APAR2:	SHLD	0
-	MVI	A,23H
-	OUT	10H
-	EI
-	RET
-MUL16:	MVI	B,16
-	XCHG
-	LXI	H,0
-MUL160:	DAD	D
-	DCR	B
-	JNZ	MUL160
-NEG:	MOV	A,H
+	LHLD	84H	; -- количество дискет
+	MOV	A,H
 	CMA
 	MOV	H,A
 	MOV	A,L
 	CMA
 	MOV	L,A
 	INX	H
+APAR2:	SHLD	0	; => APAR2+1 (BIOS) -- (10000h - (число дискет))
+	MVI	A,23H
+	OUT	10H
+	EI
 	RET
-DMA:	DW	0
-WSECT:	DB	0
-FILE0:	DB 0,'OS      COM'
-FILE1:	DB 0,'COMMAND SYS'
+;
+DMA:	.DW	0
+WSECT:	.DB	0
+FILE0:	.DB 0,"RDS     COM"	; или OS.COM после форматирования КД
+FILE1:	.DB 0,"COMMAND SYS"
+FILE2:	.DB 0,"RDS     SYS"
+;
 SAVE:	LXI	D,5CH
+	PUSH	D
 	MVI	B,12
 SAVE10:	MOV	A,M
 	STAX	D
@@ -228,20 +262,26 @@ SAVE10:	MOV	A,M
 SAVE12:	MVI	M,0
 	INR	L
 	JNZ	SAVE12
-	LXI	D,5CH
+	POP	D
+	PUSH	D	;LXI	D,5CH
+	MVI	C,19
+	CALL	5	; удалить файл (если был)
+	POP	D	;LXI	D,5CH
 	MVI	C,22
-	CALL	5
+	CALL	5	; создать файл
 	LHLD	DMA
 	LDA	WSECT
+	ANA	A
+	JZ	SAVE21	; пропускаем запись, если размер =0
 	MOV	B,A
 	XCHG
 SAVE20:	PUSH	B
 	PUSH	D
-	MVI	C,1AH
+	MVI	C,1AH	; установить DMA
 	CALL	5
 	LXI	D,5CH
 	MVI	C,21
-	CALL	5
+	CALL	5	; писать в файл
 	POP	D
 	POP	B
 	LXI	H,128
@@ -249,6 +289,198 @@ SAVE20:	PUSH	B
 	XCHG
 	DCR	B
 	JNZ	SAVE20
-	LXI	D,5CH
+SAVE21:	LXI	D,5CH
 	MVI	C,16
-	JMP	5
+	JMP	5	; закрыть файл
+;
+FIND:	MVI	A,1
+F_LOOP:	STA	WSECT
+	MOV	C,A	; сектор 1
+	CALL	SETSEC
+	CALL	READ
+	LHLD	DMA	; начало
+	LXI	D,0020h	; шаг
+FL_1:	MOV	A,M
+	CPI	0E5h
+	CNZ	L_NAME	; проверка найденой записи
+	RNZ		; >> нашли, что надо
+	DAD	D
+	XRA	A
+	CMP	H	; адрес меньше 100h
+	JZ	FL_1	; цикл по считанному
+	LDA	WSECT
+	INR	A
+	CPI	9
+	JNZ	F_LOOP	; цикл по секторам
+	RET		; не нашли...
+;
+L_NAME:;PUSH	B
+	PUSH	H
+	PUSH	D
+	LXI	D,FILE2
+	XCHG
+NLOOP:	INX	H
+	INX	D
+	LDAX	D	; читаем символ из буфера
+	ANA	A	; =0?
+	JZ	COMP	; имя закончилось, всё совпало
+	CMP	M	; сравниваем с образцом
+	JZ	NLOOP	; символ совпал, продолжаем в цикле
+	XRA	A	; не совпало, уст.Z=0
+NEND:	POP	D
+	POP	H
+;	POP	B
+	RET
+;
+COMP:	XCHG
+	INX	H
+	INX	H
+	INX	H
+	MVI	M,07Fh	; число занятых кластеров
+	MVI	A,180	; от 
+	MVI	C,196	; до
+WRN:	INX	H
+	MOV	M,A
+	INR	A
+	CMP	C
+	JNZ	WRN	; цикл по записи
+	ANA	A	; установить Z<>0
+	JMP	NEND
+#ifndef NoPACK
+;
+;input: 	hl=compressed data start
+;		de=uncompressed destination start
+unlzsa1:
+	mvi b,0
+	jmp ReadToken
+;
+NoLiterals:
+	xra m
+	push d
+	inx h
+	mov e,m
+	jm LongOffset
+ShortOffset:
+	mvi d,0FFh
+	adi 3
+	cpi 15+3
+	jnc LongerMatch
+CopyMatch:
+	mov c,a
+CopyMatch_UseC:
+	inx h
+	xthl
+	xchg
+	dad d
+	mov a,m
+	inx h
+	stax d
+	inx d
+	dcx b
+	mov a,m
+	inx h
+	stax d
+	inx d
+	dcx b
+	dcx b
+	inr c
+BLOCKCOPY1:
+	mov a,m
+	stax d
+	inx h
+	inx d
+	dcr c
+	jnz BLOCKCOPY1
+	xra a
+	ora b
+	jz $+7
+	dcr b
+	jmp BLOCKCOPY1
+	pop h
+ReadToken:
+	mov a,m
+	ani 70h
+	jz NoLiterals 
+	cpi 70h
+	jz MoreLiterals
+	rrc
+	rrc
+	rrc
+	rrc
+	mov c,a
+	mov b,m
+	inx h
+	mov a,m		; <<<
+	stax d
+	inx h
+	inx d
+	dcr c
+	jnz $-5		; >>>
+	push d
+	mov e,m
+	mvi a,8Fh
+	ana b
+	mvi b,0
+	jp ShortOffset
+LongOffset:
+	inx h
+	mov d,m
+	adi -128+3
+	cpi 15+3
+	jc CopyMatch
+LongerMatch:
+	inx h
+	add m
+	jnc CopyMatch
+	mov b,a
+	inx h
+	mov c,m
+	jnz CopyMatch_UseC
+	inx h
+	mov b,m
+	mov a,b
+	ora c
+	jnz CopyMatch_UseC
+	pop d
+	ret
+;
+MoreLiterals:		
+	xra m
+	push psw
+	mvi a,7
+	inx h
+	add m
+	jc ManyLiterals
+CopyLiterals:
+	mov c,a
+CopyLiterals_UseC:
+	inx h
+	dcx b
+	inr c
+BLOCKCOPY2:
+	mov a,m
+	stax d
+	inx h
+	inx d
+	dcr c
+	jnz BLOCKCOPY2
+	xra a
+	ora b
+	jz $+7
+	dcr b
+	jmp BLOCKCOPY1
+	pop psw
+	push d
+	mov e,m
+	jp ShortOffset
+	jmp LongOffset
+ManyLiterals:
+	mov b,a
+	inx h
+	mov c,m
+	jnz CopyLiterals_UseC
+	inx h
+	mov b,m
+	jmp CopyLiterals_UseC
+#endif
+OS:	.END
